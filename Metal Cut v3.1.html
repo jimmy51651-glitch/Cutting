@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Раскрой металла</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #0f0f0f;
+  --surface: #1a1a1a;
+  --surface2: #222222;
+  --border: #2e2e2e;
+  --text: #f0f0f0;
+  --muted: #666;
+  --accent: #e8c547;
+  --accent-dim: rgba(232,197,71,0.12);
+  --danger: #ff4d4d;
+  --danger-dim: rgba(255,77,77,0.12);
+  --success: #4caf7d;
+  --radius: 12px;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+}
+body.light {
+  --bg: #f5f3ee; --surface: #ffffff; --surface2: #f0ede6;
+  --border: #ddd9d0; --text: #1a1a1a; --muted: #999;
+  --accent: #c49a00; --accent-dim: rgba(196,154,0,0.1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { overflow-x: hidden; width: 100%; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; transition: background 0.3s, color 0.3s; }
+
+header {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--bg); border-bottom: 1px solid var(--border);
+  padding: 14px 16px; display: flex; align-items: center;
+  justify-content: space-between; backdrop-filter: blur(12px);
+}
+.header-title { display: flex; align-items: baseline; gap: 8px; }
+.header-title h1 { font-family: var(--mono); font-size: 15px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.header-badge { font-family: var(--mono); font-size: 10px; color: var(--accent); border: 1px solid var(--accent); padding: 1px 6px; border-radius: 4px; letter-spacing: 0.06em; }
+.theme-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; width: 36px; height: 36px; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.theme-btn:active { transform: scale(0.92); }
+
+.container { padding: 12px 12px 40px; }
+
+.section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; }
+.section-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.section-title { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.section-body { padding: 12px 14px; }
+
+.data-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+.data-table th { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 6px 4px; text-align: center; border-bottom: 1px solid var(--border); }
+.data-table td { padding: 5px 4px; text-align: center; border-bottom: 1px solid var(--border); font-size: 14px; }
+.data-table tr:last-child td { border-bottom: none; }
+
+.num-input { width: 100%; padding: 9px 6px; font-family: var(--mono); font-weight: 600; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); text-align: center; transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none; font-size: 16px; height: 44px; box-sizing: border-box; }
+.num-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 12px; font-size: 14px; font-family: var(--sans); font-weight: 600; border-radius: 10px; border: none; cursor: pointer; transition: opacity 0.15s, transform 0.1s; letter-spacing: 0.02em; background: var(--accent); color: #111; }
+.btn:active { transform: scale(0.97); opacity: 0.85; }
+.btn-sm { padding: 7px 12px; font-size: 13px; width: auto; border-radius: 8px; }
+.btn-run { font-size: 15px; padding: 14px; border-radius: 12px; }
+
+.icon-btn { background: var(--danger-dim); border: none; border-radius: 6px; padding: 5px 8px; color: var(--danger); font-size: 13px; cursor: pointer; }
+.icon-btn:active { opacity: 0.7; }
+
+.add-form { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 10px; align-items: stretch; }
+.add-form > div { display: flex; flex-direction: column; }
+.field-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; display: block; height: 16px; line-height: 16px; margin-bottom: 4px; text-align: center; }
+
+.result-table { width: 100%; border-collapse: collapse; font-size: 13px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+.result-table th { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 10px 8px; background: var(--surface2); text-align: center; border-bottom: 1px solid var(--border); }
+.result-table td { padding: 10px 8px; text-align: center; border-bottom: 1px solid var(--border); vertical-align: middle; line-height: 1.5; }
+.result-table tr:last-child td { border-bottom: none; }
+.result-table tr:nth-child(even) td { background: var(--surface2); }
+.sheet-label { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--accent); }
+.cuts-text { font-family: var(--mono); font-size: 12px; }
+.rest-text { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+.summary { margin-top: 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.summary-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.summary-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.summary-row:last-child { border-bottom: none; }
+.summary-key { font-family: var(--mono); font-weight: 600; }
+.summary-val { font-family: var(--mono); color: var(--success); }
+.summary-err { font-family: var(--mono); color: var(--danger); font-size: 12px; }
+.error-msg { padding: 12px; background: var(--danger-dim); border: 1px solid rgba(255,77,77,0.3); border-radius: 8px; color: var(--danger); font-size: 13px; font-family: var(--mono); text-align: center; }
+
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(6px);
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 600px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.25s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-title { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.modal-close { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; width: 32px; height: 32px; font-size: 16px; cursor: pointer; color: var(--text); display: flex; align-items: center; justify-content: center; }
+.modal-body { padding: 16px 18px; overflow-y: auto; flex: 1; }
+.modal-footer { padding: 12px 18px 24px; border-top: 1px solid var(--border); }
+
+.cnc-program { font-family: var(--mono); font-size: 14px; line-height: 2; }
+.cnc-line { display: flex; align-items: center; gap: 10px; padding: 3px 0; border-bottom: 1px solid var(--border); }
+.cnc-line:last-child { border-bottom: none; }
+.cnc-num { font-size: 10px; color: var(--muted); min-width: 20px; text-align: right; }
+.cnc-cmd { font-weight: 600; }
+.cnc-stopper .cnc-cmd { color: #60a5fa; }
+.cnc-cutting .cnc-cmd { color: var(--danger); }
+.cnc-move .cnc-cmd { color: #a78bfa; }
+.cnc-chain .cnc-cmd { color: var(--accent); }
+.cnc-end .cnc-cmd { color: var(--success); }
+.cnc-comment { font-size: 11px; color: var(--muted); margin-left: auto; }
+
+.btn-prog {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 11px;
+  font-family: var(--mono);
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: border-color 0.2s, color 0.2s;
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.btn-prog:hover { border-color: var(--accent); color: var(--accent); }
+.btn-prog:active { opacity: 0.7; }
+
+.btn-clear {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 12px;
+  font-family: var(--mono);
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+.btn-clear:hover { color: var(--danger); }
+
+.toggle-zavalt {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 10px 14px; margin-bottom: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; cursor: pointer; font-family: var(--sans);
+  font-size: 14px; font-weight: 500; color: var(--muted);
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.toggle-zavalt.active {
+  border-color: var(--accent); color: var(--accent);
+  background: var(--accent-dim);
+}
+.toggle-zavalt-icon { font-size: 18px; line-height: 1; transition: all 0.2s; }
+</style>
+
+</head>
+<body>
+
+<header>
+  <div class="header-title">
+    <h1>Раскрой металла</h1>
+    <span class="header-badge">v3.1</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button class="btn-clear" onclick="clearAll()">очистить</button>
+    <button class="theme-btn" id="themeToggle">☀️</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ЛИСТЫ -->
+
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">📋 Листы</span>
+      <button class="btn btn-sm" onclick="exportSheets()">Экспорт</button>
+    </div>
+    <div class="section-body">
+      <div class="add-form">
+        <div>
+          <label class="field-label">Ширина</label>
+          <input class="num-input" id="sheetWidthInput" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="1250" value="1250">
+        </div>
+        <div>
+          <label class="field-label">Длина</label>
+          <input class="num-input" id="sheetLengthInput" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="">
+        </div>
+        <div>
+          <label class="field-label">Кол-во</label>
+          <input class="num-input" id="sheetCountInput" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="" value="1">
+        </div>
+      </div>
+      <button class="btn" onclick="addSheet()">+ Добавить лист</button>
+      <table class="data-table" id="sheetsTable" style="margin-top:12px">
+        <tr><th>Ширина</th><th>Длина</th><th>Кол-во</th><th></th></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ДЕТАЛИ -->
+
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">🔩 Детали</span>
+      <button class="btn btn-sm" onclick="exportDetails()">Экспорт</button>
+    </div>
+    <div class="section-body">
+      <div class="add-form">
+        <div>
+          <label class="field-label">Ширина</label>
+          <input class="num-input" id="detailWidthInput" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0">
+        </div>
+        <div>
+          <label class="field-label">Длина</label>
+          <input class="num-input" id="detailLengthInput" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0">
+        </div>
+        <div>
+          <label class="field-label">Кол-во</label>
+          <input class="num-input" id="detailCountInput" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="1">
+        </div>
+      </div>
+      <button class="toggle-zavalt" id="zavaltToggle" onclick="toggleZavalt()">
+        <span class="toggle-zavalt-icon" id="zavaltIcon">○</span>
+        <span>Завальцовка</span>
+      </button>
+      <button class="btn" onclick="addDetailRow()">+ Добавить деталь</button>
+      <table class="data-table" id="detailsTable" style="margin-top:12px">
+        <tr><th>Ширина</th><th>Длина</th><th>Кол-во</th><th>Завальц.</th><th></th></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- РАСКРОЙ -->
+
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">⚡ Раскрой</span>
+      <button class="btn btn-sm" onclick="exportCutting()">Экспорт</button>
+    </div>
+    <div class="section-body">
+      <button class="btn btn-run" onclick="calculateCutting()">▶ Выполнить раскрой</button>
+      <div id="cuttingResult" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Программа ЧПУ</span>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="cnc-program" id="cncProgram"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="copyCncProgram()">Копировать программу</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ===== ТЕМА =====
+  let isDark = true;
+  const themeToggle = document.getElementById('themeToggle');
+  themeToggle.addEventListener('click', () => {
+    isDark = !isDark;
+    document.body.classList.toggle('light', !isDark);
+    themeToggle.textContent = isDark ? '☀️' : '🌙';
+  });
+
+  // ===== ЛИСТЫ =====
+  function addSheet() {
+    const w = parseInt(document.getElementById('sheetWidthInput').value) || 0;
+    const l = parseInt(document.getElementById('sheetLengthInput').value) || 0;
+    const c = parseInt(document.getElementById('sheetCountInput').value) || 1;
+    if (w <= 0 || l <= 0 || c <= 0) return;
+    const table = document.getElementById('sheetsTable');
+    const row = table.insertRow();
+    [w, l, c].forEach(v => { row.insertCell().textContent = v; });
+    const td = row.insertCell();
+    const btn = document.createElement('button');
+    btn.textContent = '✕'; btn.className = 'icon-btn';
+    btn.onclick = () => table.deleteRow(row.rowIndex);
+    td.appendChild(btn);
+    document.getElementById('sheetWidthInput').value = '1250';
+    document.getElementById('sheetLengthInput').value = '';
+    document.getElementById('sheetCountInput').value = '1';
+    document.getElementById('sheetLengthInput').focus();
+  }
+
+  ['sheetWidthInput','sheetLengthInput','sheetCountInput'].forEach((id, i, arr) => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        if (i < arr.length - 1) document.getElementById(arr[i+1]).focus();
+        else addSheet();
+      }
+    });
+  });
+
+  // ===== ДЕТАЛИ =====
+  let zavaltActive = false;
+  function toggleZavalt() {
+    zavaltActive = !zavaltActive;
+    const btn = document.getElementById('zavaltToggle');
+    const icon = document.getElementById('zavaltIcon');
+    btn.classList.toggle('active', zavaltActive);
+    icon.textContent = zavaltActive ? '●' : '○';
+  }
+
+  function addDetailRow() {
+    const w = parseInt(document.getElementById('detailWidthInput').value) || 0;
+    const l = parseInt(document.getElementById('detailLengthInput').value) || 0;
+    const c = parseInt(document.getElementById('detailCountInput').value) || 0;
+    if (w <= 0 || l <= 0 || c <= 0) return;
+    const zavalt = zavaltActive;
+    const table = document.getElementById('detailsTable');
+    const row = table.insertRow();
+    [w, l, c].forEach(v => { row.insertCell().textContent = v; });
+    // Завальцовка ячейка
+    const ztd = row.insertCell();
+    ztd.textContent = zavalt ? '±2' : '—';
+    ztd.style.color = zavalt ? 'var(--accent)' : 'var(--muted)';
+    ztd.dataset.zavalt = zavalt ? '1' : '0';
+    const td = row.insertCell();
+    const btn = document.createElement('button');
+    btn.textContent = '✕'; btn.className = 'icon-btn';
+    btn.onclick = () => table.deleteRow(row.rowIndex);
+    td.appendChild(btn);
+    document.getElementById('detailWidthInput').value = '';
+    document.getElementById('detailLengthInput').value = '';
+    document.getElementById('detailCountInput').value = '';
+    // сбрасываем завальцовку
+    zavaltActive = false;
+    document.getElementById('zavaltToggle').classList.remove('active');
+    document.getElementById('zavaltIcon').textContent = '○';
+    document.getElementById('detailWidthInput').focus();
+  }
+
+  ['detailWidthInput','detailLengthInput','detailCountInput'].forEach((id, i, arr) => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        if (i < arr.length - 1) document.getElementById(arr[i+1]).focus();
+        else addDetailRow();
+      }
+    });
+  });
+
+  // ===== ЭКСПОРТ =====
+  function exportSheets() {
+    let text = '';
+    const t = document.getElementById('sheetsTable');
+    for (let i = 1; i < t.rows.length; i++) {
+      const r = t.rows[i];
+      text += `${r.cells[0].textContent}x${r.cells[1].textContent} x${r.cells[2].textContent}\n`;
+    }
+    copyToClipboard(text);
+  }
+  function exportDetails() {
+    let text = '';
+    const t = document.getElementById('detailsTable');
+    for (let i = 1; i < t.rows.length; i++) {
+      const r = t.rows[i];
+      text += `${r.cells[0].textContent}x${r.cells[1].textContent} x${r.cells[2].textContent}\n`;
+    }
+    copyToClipboard(text);
+  }
+  function exportCutting() { copyToClipboard(document.getElementById('cuttingResult').innerText); }
+  function copyToClipboard(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('Скопировано ✓');
+  }
+  function showToast(msg) {
+    const t = document.createElement('div');
+    t.textContent = msg;
+    Object.assign(t.style, { position:'fixed', bottom:'24px', left:'50%', transform:'translateX(-50%)', background:'var(--accent)', color:'#111', padding:'10px 20px', borderRadius:'20px', fontFamily:'var(--mono)', fontSize:'13px', fontWeight:'600', zIndex:'9999', opacity:'0', transition:'opacity 0.2s' });
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.style.opacity = '1');
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 1800);
+  }
+
+  // ===== АЛГОРИТМ РАСКРОЯ =====
+  function mergeRemainders(strips) {
+    const u = {};
+    for (const s of strips) {
+      if (s.width > 0 && s.height > 0) {
+        const k = `${s.width}x${s.height}`;
+        u[k] = u[k] || { width: s.width, height: s.height, count: 0 };
+        u[k].count++;
+      }
+    }
+    const r = [];
+    for (const k in u) for (let i = 0; i < u[k].count; i++) r.push({ width: u[k].width, height: u[k].height });
+    return r;
+  }
+
+  function processRemainingStrip(strip, details, cuts, detailsUsed) {
+    if (!details.length || strip.width <= 0 || strip.height <= 0)
+      return (strip.width > 0 && strip.height > 0) ? [strip] : [];
+    const detail = details[0];
+    const rest = details.slice(1);
+    if (detail.width <= strip.width && detail.count > 0) {
+      const count = Math.min(Math.floor(strip.height / detail.height), detail.count);
+      if (count > 0) {
+        const found = cuts.find(c => c.width === detail.width && c.height === detail.height);
+        if (found) found.count += count; else cuts.push({ width: detail.width, height: detail.height, count });
+        detail.count -= count;
+        const k = `${detail.width}x${detail.height}`;
+        detailsUsed[k] = (detailsUsed[k] || 0) + count;
+        const usedH = count * detail.height;
+        const rem = [];
+        if (usedH < strip.height) rem.push(...processRemainingStrip({ width: detail.width, height: strip.height - usedH }, details.filter(d => d.count > 0), cuts, detailsUsed));
+        const remW = strip.width - detail.width;
+        if (remW > 0) {
+          const next = details.filter(d => d.count > 0);
+          if (next.length) rem.push(...processRemainingStrip({ width: remW, height: strip.height }, next, cuts, detailsUsed));
+          else rem.push({ width: remW, height: strip.height });
+        }
+        return mergeRemainders(rem);
+      } else return processRemainingStrip(strip, rest, cuts, detailsUsed);
+    } else return processRemainingStrip(strip, rest, cuts, detailsUsed);
+  }
+
+  // ===== ГЕНЕРАТОР ПРОГРАММЫ ЧПУ =====
+  function generateCNCProgram(cuts, sheetWidth, sheetLength) {
+    const SW = sheetWidth || 1250;
+    const SL = sheetLength || 99999;
+
+    const sorted = cuts.slice().sort((a, b) => a.width - b.width);
+    const allStrips = [];
+    for (const s of sorted) {
+      const perStrip = (s.height > 0 && s.height < SL) ? Math.floor(SL / s.height) : 1;
+      const stripCount = perStrip > 1 ? Math.ceil(s.count / perStrip) : s.count;
+      for (let i = 0; i < stripCount; i++) allStrips.push(s.width);
+    }
+
+    const lines = [];
+
+    if (allStrips.length === 0) {
+      lines.push({ type: 'end', cmd: 'End', comment: '' });
+      return buildResult(lines);
+    }
+
+    const totalWidth = allStrips.reduce((a, b) => a + b, 0);
+    const hasRemainder = totalWidth < SW;
+
+    const makeGroups = (arr) => {
+      const g = []; let i = 0;
+      while (i < arr.length) {
+        const w = arr[i]; let cnt = 1;
+        while (i + cnt < arr.length && arr[i + cnt] === w) cnt++;
+        g.push({ width: w, count: cnt });
+        i += cnt;
+      }
+      return g;
+    };
+
+    const CHAIN_MIN = 3;
+
+    // Добавляет группы полос начиная с позиции startPos.
+    // Все полосы режутся — lastStrip больше не исключается.
+    const addGroups = (groups, startPos) => {
+      let pos = startPos;
+      let afterChain = false;
+      for (let gi = 0; gi < groups.length; gi++) {
+        const g = groups[gi];
+        if (g.count >= CHAIN_MIN) {
+          lines.push({ type: 'stopper', cmd: `Stopper ${pos}`, comment: 'перед Chain' });
+          lines.push({ type: 'chain', cmd: `Chain ${g.width}x${g.count}`, comment: `${g.count} полос по ${g.width}` });
+          pos -= g.width * g.count;
+          afterChain = true;
+        } else {
+          for (let n = 0; n < g.count; n++) {
+            pos -= g.width;
+            if (afterChain) {
+              lines.push({ type: 'stopper', cmd: `Stopper ${pos}`, comment: `полоса ${g.width}` });
+              lines.push({ type: 'cutting', cmd: 'Cutting', comment: '' });
+              afterChain = false;
+            } else {
+              lines.push({ type: 'move', cmd: `Move -${g.width}`, comment: `полоса ${g.width}` });
+              lines.push({ type: 'cutting', cmd: 'Cutting', comment: '' });
+            }
+          }
+          afterChain = false;
+        }
+      }
+      return pos;
+    };
+
+    // ===== БЕЗ ОСТАТКА =====
+    if (!hasRemainder) {
+      if (allStrips.length === 1) {
+        // Единственная полоса — весь лист, резать нечего
+        lines.push({ type: 'end', cmd: 'End', comment: `полоса ${allStrips[0]} — весь лист` });
+        return buildResult(lines);
+      }
+
+      // Первая полоса: Stopper + Cutting
+      const firstW = allStrips[0];
+      lines.push({ type: 'stopper', cmd: `Stopper ${SW - firstW}`, comment: `первая полоса ${firstW}` });
+      lines.push({ type: 'cutting', cmd: 'Cutting', comment: '' });
+      let pos = SW - firstW;
+
+      // Все оставшиеся полосы через addGroups (включая последнюю)
+      addGroups(makeGroups(allStrips.slice(1)), pos);
+      lines.push({ type: 'end', cmd: 'End', comment: '' });
+      return buildResult(lines);
+    }
+
+    // ===== С ОСТАТКОМ =====
+    const stopper = totalWidth;
+    let pos = stopper;
+
+    lines.push({ type: 'stopper', cmd: `Stopper ${stopper}`, comment: `сумма полос ${totalWidth}` });
+    lines.push({ type: 'cutting', cmd: 'Cutting', comment: 'срезаем край' });
+
+    if (allStrips.length === 0) {
+      lines.push({ type: 'end', cmd: 'End', comment: '' });
+      return buildResult(lines);
+    }
+
+    // Все полосы через addGroups
+    addGroups(makeGroups(allStrips), pos);
+    lines.push({ type: 'end', cmd: 'End', comment: '' });
+    return buildResult(lines);
+  }
+
+  function buildResult(lines) {
+    const text = lines.map(l => l.cmd).join('\n');
+    return { lines, text };
+  }
+
+  // ===== MODAL =====
+  let currentCncText = '';
+
+  function openModal(cuts, sheetLabel, sheetWidth, sheetLength) {
+    const prog = generateCNCProgram(cuts, sheetWidth || 1250, sheetLength || 99999);
+    currentCncText = prog.text;
+
+    document.getElementById('modalTitle').textContent = `Программа — лист ${sheetLabel}`;
+
+    const container = document.getElementById('cncProgram');
+    container.innerHTML = '';
+
+    prog.lines.forEach((l, idx) => {
+      const div = document.createElement('div');
+      div.className = `cnc-line cnc-${l.type}`;
+
+      const num = document.createElement('span');
+      num.className = 'cnc-num';
+      num.textContent = idx + 1;
+
+      const cmd = document.createElement('span');
+      cmd.className = 'cnc-cmd';
+      cmd.textContent = l.cmd;
+
+      div.appendChild(num);
+      div.appendChild(cmd);
+
+      if (l.comment) {
+        const cmt = document.createElement('span');
+        cmt.className = 'cnc-comment';
+        cmt.textContent = '// ' + l.comment;
+        div.appendChild(cmt);
+      }
+
+      container.appendChild(div);
+    });
+
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  function closeModalDirect() {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+
+  function closeModal(e) {
+    if (e.target === document.getElementById('modalOverlay')) closeModalDirect();
+  }
+
+  function copyCncProgram() {
+    copyToClipboard(currentCncText);
+  }
+
+  // ===== РАСЧЁТ РАСКРОЯ =====
+  let groupCutsStore = [];
+
+  function calculateCutting() {
+    const sheets = [];
+    const sheetsTable = document.getElementById('sheetsTable');
+    for (let i = 1; i < sheetsTable.rows.length; i++) {
+      const r = sheetsTable.rows[i];
+      const w = parseInt(r.cells[0].textContent) || 0;
+      const l = parseInt(r.cells[1].textContent) || 0;
+      const c = parseInt(r.cells[2].textContent) || 0;
+      if (w > 0 && l > 0 && c > 0)
+        for (let j = 0; j < c; j++) sheets.push({ width: w, height: l });
+    }
+
+    const detailsMap = {};
+    const detailsTable = document.getElementById('detailsTable');
+    for (let i = 1; i < detailsTable.rows.length; i++) {
+      const r = detailsTable.rows[i];
+      const w = parseInt(r.cells[0].textContent) || 0;
+      const l = parseInt(r.cells[1].textContent) || 0;
+      const c = parseInt(r.cells[2].textContent) || 0;
+      const zavalt = r.cells[3].dataset.zavalt === '1';
+      if (w > 0 && l > 0 && c > 0) {
+        const key = `${w}x${l}`;
+        if (!detailsMap[key]) detailsMap[key] = { width: w, height: l, count: 0, zavalt };
+        detailsMap[key].count += c;
+      }
+    }
+    const details = Object.values(detailsMap);
+
+    const el = document.getElementById('cuttingResult');
+    if (!sheets.length || !details.length) {
+      el.innerHTML = '<div class="error-msg">Заполните листы и детали</div>';
+      return;
+    }
+
+    const cuttingGroups = [];
+    const detailsUsed = {};
+    const originalDetails = details.map(d => ({ ...d }));
+    sheets.sort((a, b) => b.height - a.height);
+
+    for (const sheet of sheets) {
+      const cuts = [];
+      let remainingWidth = sheet.width;
+      let remainingStrips = [];
+
+      const detailsLeft = originalDetails.map(d => ({
+        ...d, count: Math.max(0, d.count - (detailsUsed[`${d.width}x${d.height}`] || 0))
+      }));
+      detailsLeft.sort((a, b) => a.height !== b.height ? b.height - a.height : b.width - a.width);
+
+      for (const detail of detailsLeft.filter(d => d.height === sheet.height)) {
+        if (detail.count <= 0) continue;
+        // Для деталей с завальцовкой выбираем ширину от w-2 до w+2, которая даёт максимум штук
+        let bestWidth = detail.width;
+        if (detail.zavalt) {
+          let bestStrips = 0;
+          for (let dw = detail.width - 2; dw <= detail.width + 2; dw++) {
+            if (dw <= 0) continue;
+            const s = Math.min(Math.floor(remainingWidth / dw), detail.count);
+            if (s > bestStrips) { bestStrips = s; bestWidth = dw; }
+          }
+        }
+        const strips = Math.min(Math.floor(remainingWidth / bestWidth), detail.count);
+        if (strips > 0) {
+          cuts.push({ width: bestWidth, height: detail.height, count: strips, nominalWidth: detail.width, zavalt: detail.zavalt });
+          detail.count -= strips;
+          const k = `${detail.width}x${detail.height}`;
+          detailsUsed[k] = (detailsUsed[k] || 0) + strips;
+          remainingWidth -= strips * bestWidth;
+        }
+      }
+
+      // ===== ОПТИМИЗАЦИЯ: если до ширины листа не хватает ≤10мм — дотягиваем завальцовками =====
+      const usedWidth = sheet.width - remainingWidth;
+      const gap = remainingWidth; // сколько мм не хватает до края листа
+      if (gap > 0 && gap <= 10) {
+        const zavaltCuts = cuts.filter(c => c.zavalt);
+        if (zavaltCuts.length > 0) {
+          let toAdd = gap; // сколько мм нужно добавить суммарно
+          // Добавляем по 1мм к полосам пока не закроем gap или не исчерпаем лимит +2мм
+          for (const c of zavaltCuts) {
+            if (toAdd <= 0) break;
+            const maxW = c.nominalWidth + 2;
+            while (c.width < maxW && toAdd > 0) {
+              // +1мм к этой детали даёт +c.count мм суммарно
+              if (c.count <= toAdd) {
+                c.width += 1;
+                toAdd -= c.count;
+              } else {
+                // c.count > toAdd — нельзя добавить 1мм ко всем, пропускаем
+                break;
+              }
+            }
+          }
+          // Если дотянули до нуля — полосы заполняют лист без начального среза
+          remainingWidth = sheet.width - cuts.reduce((s, c) => s + c.width * c.count, 0);
+          if (remainingWidth < 0) remainingWidth = 0; // на случай переполнения
+        }
+      }
+
+      if (remainingWidth > 0) remainingStrips.push({ width: remainingWidth, height: sheet.height });
+
+      const shortDetails = detailsLeft.filter(d => d.height < sheet.height && d.count > 0);
+      let newStrips = [];
+      for (const strip of remainingStrips)
+        newStrips.push(...processRemainingStrip(strip, shortDetails, cuts, detailsUsed));
+      remainingStrips = newStrips;
+
+      const rem = {};
+      for (const s of remainingStrips)
+        if (s.width > 0 && s.height > 0) { const k = `${s.width}x${s.height}`; rem[k] = (rem[k] || 0) + 1; }
+
+      const restParts = Object.entries(rem).map(([sz, cnt]) => `${sz} ×${cnt}`);
+      cuttingGroups.push({ cuts: cuts.map(c => ({ ...c })), rest: restParts.join(', ') || '—', length: sheet.height, width: sheet.width });
+    }
+
+    const groups = {};
+    for (const g of cuttingGroups) {
+      const cutsStr = g.cuts.map(d => {
+        const perStrip = Math.floor(g.length / d.height);
+        const widthLabel = (d.zavalt && d.nominalWidth && d.width !== d.nominalWidth)
+          ? `${d.width}(${d.nominalWidth > d.width ? '-' : '+'}${Math.abs(d.nominalWidth - d.width)})` 
+          : `${d.width}`;
+        return perStrip > 1 ? `${widthLabel}×${d.height} ×${d.count} (${perStrip}/пол.)` : `${widthLabel}×${d.height} ×${d.count}`;
+      }).join(', ') || '—';
+      const key = cutsStr + '|' + g.rest;
+      if (!groups[key]) {
+        groups[key] = { count: 0, cuts: cutsStr, rest: g.rest, length: g.length, width: g.width, cutsData: g.cuts };
+      }
+      groups[key].count++;
+    }
+
+    groupCutsStore = [];
+    let gIdx = 0;
+
+    let html = `<table class="result-table">
+      <tr><th>Листы</th><th>Раскрой</th><th>Остаток / Программа</th></tr>`;
+
+    for (const key in groups) {
+      const g = groups[key];
+      const label = g.count === 1 ? `1 × ${g.length}` : `${g.count} × ${g.length}`;
+      const storeIdx = gIdx++;
+      groupCutsStore.push({ cuts: g.cutsData, label: g.length, width: g.width, length: g.length });
+
+      html += `<tr>
+        <td><span class="sheet-label">${label}</span></td>
+        <td class="cuts-text">${g.cuts}</td>
+        <td>
+          <div class="rest-text" style="margin-bottom:8px">${g.rest}</div>
+          <button class="btn-prog" onclick="openModal(groupCutsStore[${storeIdx}].cuts, groupCutsStore[${storeIdx}].label, groupCutsStore[${storeIdx}].width, groupCutsStore[${storeIdx}].length)">⚙ прогр.</button>
+        </td>
+      </tr>`;
+    }
+    html += '</table>';
+
+    html += `<div class="summary"><div class="summary-title">📊 Итого</div>`;
+    for (const d of originalDetails) {
+      const used = detailsUsed[`${d.width}x${d.height}`] || 0;
+      const missing = d.count - used;
+      html += `<div class="summary-row">
+        <span class="summary-key">${d.width}×${d.height}</span>
+        <span>
+          <span class="summary-val">размещено ${used} из ${d.count}</span>
+          ${missing > 0 ? `<span class="summary-err"> (не хватило: ${missing})</span>` : ''}
+        </span>
+      </div>`;
+    }
+    html += '</div>';
+
+    el.innerHTML = html;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ===== ОЧИСТИТЬ ВСЁ =====
+  function clearAll() {
+    const sheetsTable = document.getElementById('sheetsTable');
+    while (sheetsTable.rows.length > 1) sheetsTable.deleteRow(1);
+
+    document.getElementById('sheetWidthInput').value = '1250';
+    document.getElementById('sheetLengthInput').value = '';
+    document.getElementById('sheetCountInput').value = '1';
+
+    const detailsTable = document.getElementById('detailsTable');
+    while (detailsTable.rows.length > 1) detailsTable.deleteRow(1);
+
+    document.getElementById('detailWidthInput').value = '';
+    document.getElementById('detailLengthInput').value = '';
+    document.getElementById('detailCountInput').value = '';
+
+    document.getElementById('cuttingResult').innerHTML = '';
+
+    showToast('Очищено ✓');
+  }
+</script>
+
+</body>
+</html>
